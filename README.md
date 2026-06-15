@@ -1,6 +1,6 @@
 ---
 title: Vietnamese OCR API
-emoji: 🇻🇳
+emoji: 📝
 colorFrom: yellow
 colorTo: red
 sdk: docker
