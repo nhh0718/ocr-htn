@@ -1,0 +1,11 @@
+fastapi==0.115.2
+uvicorn[standard]==0.30.6
+python-multipart==0.0.12
+pillow==10.4.0
+opencv-python-headless==4.10.0.84
+numpy==1.26.4
+paddleocr==2.8.1
+paddlepaddle==2.6.1
+vietocr==0.3.13
+# torch / torchvision CPU wheels are installed in the Dockerfile from the
+# official PyTorch CPU index so we avoid pulling CUDA libraries on Render.

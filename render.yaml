@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: ocr-vietnamese
+    runtime: docker
+    plan: standard
+    region: singapore
+    healthCheckPath: /healthz
+    autoDeploy: true
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: VIETOCR_WEIGHTS
+        value: vgg_transformer
+      - key: OCR_DEVICE
+        value: cpu
+      - key: PADDLE_LANG
+        value: en
+      - key: MAX_IMAGE_SIDE
+        value: "1600"
+      - key: PORT
+        value: "8000"
