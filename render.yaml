@@ -16,5 +16,7 @@ services:
         value: en
       - key: MAX_IMAGE_SIDE
         value: "1600"
+      - key: EXTRACTION_PROVIDER
+        value: none
       - key: PORT
         value: "8000"

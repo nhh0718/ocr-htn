@@ -1,0 +1,39 @@
+{
+  "name": "BIDV Bank Transfer",
+  "description": "BIDV chuyển tiền nhận được - thông báo giao dịch",
+  "detect": {
+    "any_keyword": ["BIDV", "NH TMCP Đầu tư và Phát triển", "Dau tu va phat trien"]
+  },
+  "fields": {
+    "amount": {
+      "regex": "([\\d.,]+)\\s*VND",
+      "transform": "vnd_to_number"
+    },
+    "sender": {
+      "regex": "Từ\\s+(.+?)(?=\\s+\\d)",
+      "transform": "strip"
+    },
+    "receiver": {
+      "anchor": "Đến",
+      "direction": "below",
+      "stop_at": ["V3G", "VIB", "TPB", "MB", "VCB", "ACB"]
+    },
+    "transaction_code": {
+      "regex": "(V3G[A-Z0-9]+)",
+      "transform": "strip"
+    },
+    "datetime": {
+      "regex": "(\\d{2}/\\d{2}/\\d{4}),?\\s*(\\d{2}:\\d{2}:\\d{2})",
+      "transform": "strip"
+    },
+    "fee": {
+      "regex": "Phí\\s*(Miễn phí|[\\d.,]+)",
+      "transform": "strip"
+    },
+    "description": {
+      "anchor": "Nội dung",
+      "direction": "below",
+      "stop_at": ["Đến", "Lợi suất", "Chứng chỉ", "Đóng"]
+    }
+  }
+}

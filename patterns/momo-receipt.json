@@ -1,0 +1,45 @@
+{
+  "name": "MoMo Receipt",
+  "description": "MoMo biên lai giao dịch - mua vé, thanh toán, chuyển tiền",
+  "detect": {
+    "any_keyword": ["MoMo", "Ví MoMo", "Chi Tiết Giao Dịch", "Mã giao dịch"]
+  },
+  "fields": {
+    "transaction_type": {
+      "regex": "(MUA VÉ XEM PHIM|THANH TOÁN|CHUYỂN TIỀN|NẠP TIỀN|RÚT TIỀN)",
+      "transform": "upper"
+    },
+    "amount": {
+      "regex": "-?([\\d.,]+)\\s*$",
+      "transform": "vnd_to_number"
+    },
+    "status": {
+      "anchor": "Trạng thái",
+      "direction": "right"
+    },
+    "datetime": {
+      "regex": "(\\d{2}:\\d{2}:\\d{2})\\s*-?\\s*(\\d{2}/\\d{2}/\\d{4})",
+      "transform": "strip"
+    },
+    "transaction_id": {
+      "regex": "Mã giao dịch\\s*(\\d+)"
+    },
+    "account": {
+      "anchor": "Tài khoản/thẻ",
+      "direction": "right"
+    },
+    "fee": {
+      "anchor": "Tổng phí",
+      "direction": "right"
+    },
+    "category": {
+      "anchor": "Danh mục",
+      "direction": "right"
+    },
+    "merchant": {
+      "anchor": "THÔNG TIN",
+      "direction": "below",
+      "stop_at": ["2D", "3D", "Liên hệ", "CSKH"]
+    }
+  }
+}

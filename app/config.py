@@ -28,6 +28,15 @@ class Settings:
     model_dir: str = os.getenv("MODEL_DIR", "/app/models")
     # Whether to log per-request timings
     verbose: bool = _get_bool("OCR_VERBOSE", False)
+    # --- Extraction layer ---
+    # LLM provider: "gemini" | "openai" | "none"
+    extraction_provider: str = os.getenv("EXTRACTION_PROVIDER", "none")
+    # API key for the chosen provider
+    extraction_api_key: str = os.getenv("EXTRACTION_API_KEY", "")
+    # Model name (provider-specific)
+    extraction_model: str = os.getenv("EXTRACTION_MODEL", "gemini-2.0-flash")
+    # Directory containing pattern JSON files
+    patterns_dir: str = os.getenv("PATTERNS_DIR", os.path.join(os.path.dirname(os.path.dirname(__file__)), "patterns"))
 
 
 settings = Settings()

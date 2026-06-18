@@ -25,6 +25,24 @@ class _Box:
     y_center: float
     x_center: float
     height: float
+    width: float
+
+
+@dataclass
+class TextBlock:
+    text: str
+    bbox: list[float]  # [x_min, y_min, x_max, y_max]
+    confidence: float
+    line_index: int
+
+
+@dataclass
+class OCRResult:
+    text: str
+    lines: List[str]
+    blocks: List[TextBlock]
+    image_size: list[int]  # [width, height]
+    elapsed_ms: int
 
 
 class OCREngine:
@@ -56,20 +74,28 @@ class OCREngine:
         """Force model load. Safe to call multiple times."""
         self._ensure_loaded()
 
-    def recognize(self, image_bgr: np.ndarray) -> List[str]:
-        """Run the full pipeline on a BGR ndarray and return ordered text lines."""
+    def recognize(self, image_bgr: np.ndarray) -> OCRResult:
+        """Run the full pipeline on a BGR ndarray and return structured result."""
         self._ensure_loaded()
+        h, w = image_bgr.shape[:2]
         if image_bgr is None or image_bgr.size == 0:
-            return []
+            return OCRResult(text="", lines=[], blocks=[], image_size=[w, h], elapsed_ms=0)
         image_bgr, _ = resize_max_side(image_bgr)
+        rh, rw = image_bgr.shape[:2]
         boxes = self._detect(image_bgr)
         if not boxes:
-            return []
+            return OCRResult(text="", lines=[], blocks=[], image_size=[rw, rh], elapsed_ms=0)
         crops_rgb = [self._crop_to_rgb(image_bgr, b.points) for b in boxes]
         texts = self._recognize_batch(crops_rgb)
-        # Pair texts with boxes, drop empties, group into lines preserving order.
         items = [(b, t) for b, t in zip(boxes, texts) if t and t.strip()]
-        return self._group_lines(items)
+        lines, blocks = self._group_lines_with_blocks(items)
+        return OCRResult(
+            text="\n".join(lines),
+            lines=lines,
+            blocks=blocks,
+            image_size=[rw, rh],
+            elapsed_ms=0,
+        )
 
     # ----------------------------------------------------------------- private
     def _ensure_loaded(self) -> None:
@@ -86,8 +112,6 @@ class OCREngine:
         from paddleocr import PaddleOCR
 
         logger.info("Loading PaddleOCR detector (lang=%s)...", settings.paddle_lang)
-        # We only use detection; rec=False skips loading the (lower quality for VN)
-        # PaddleOCR recognizer entirely.
         self._detector = PaddleOCR(
             lang=settings.paddle_lang,
             use_angle_cls=False,
@@ -105,12 +129,10 @@ class OCREngine:
         cfg = Cfg.load_config_from_name(settings.vietocr_weights)
         cfg["device"] = settings.device
         cfg["predictor"]["beamsearch"] = False
-        # vietocr will download pretrained weights to its default cache on first use
         self._recognizer = Predictor(cfg)
         logger.info("VietOCR recognizer ready.")
 
     def _detect(self, image_bgr: np.ndarray) -> List[_Box]:
-        # PaddleOCR.ocr with rec=False returns: [[box1, box2, ...]]  (one entry per image)
         result = self._detector.ocr(image_bgr, det=True, rec=False, cls=False)
         if not result:
             return []
@@ -123,6 +145,7 @@ class OCREngine:
             ys = pts[:, 1]
             xs = pts[:, 0]
             height = float(ys.max() - ys.min())
+            width = float(xs.max() - xs.min())
             if height < 2:
                 continue
             boxes.append(
@@ -131,6 +154,7 @@ class OCREngine:
                     y_center=float(ys.mean()),
                     x_center=float(xs.mean()),
                     height=height,
+                    width=width,
                 )
             )
         return boxes
@@ -144,7 +168,6 @@ class OCREngine:
     def _recognize_batch(self, crops: Sequence[Image.Image]) -> List[str]:
         if not crops:
             return []
-        # VietOCR Predictor.predict_batch is faster but optional depending on version.
         predict_batch = getattr(self._recognizer, "predict_batch", None)
         try:
             if callable(predict_batch):
@@ -162,33 +185,51 @@ class OCREngine:
             return ""
 
     @staticmethod
-    def _group_lines(items: Sequence[tuple[_Box, str]]) -> List[str]:
+    def _group_lines_with_blocks(
+        items: Sequence[tuple[_Box, str]],
+    ) -> tuple[List[str], List[TextBlock]]:
         if not items:
-            return []
-        # Sort top-to-bottom first.
+            return [], []
         sorted_items = sorted(items, key=lambda it: (it[0].y_center, it[0].x_center))
         avg_height = float(np.mean([it[0].height for it in sorted_items])) or 1.0
         tolerance = avg_height * settings.line_y_tolerance
 
-        lines: List[List[tuple[_Box, str]]] = []
+        grouped: List[List[tuple[_Box, str]]] = []
         for box, text in sorted_items:
-            if not lines:
-                lines.append([(box, text)])
+            if not grouped:
+                grouped.append([(box, text)])
                 continue
-            current = lines[-1]
+            current = grouped[-1]
             current_y = float(np.mean([b.y_center for b, _ in current]))
             if abs(box.y_center - current_y) <= tolerance:
                 current.append((box, text))
             else:
-                lines.append([(box, text)])
+                grouped.append([(box, text)])
 
-        out: List[str] = []
-        for line in lines:
+        lines: List[str] = []
+        blocks: List[TextBlock] = []
+        for line_idx, line in enumerate(grouped):
             line.sort(key=lambda it: it[0].x_center)
-            joined = " ".join(t.strip() for _, t in line if t.strip())
+            parts = []
+            for box, text in line:
+                t = text.strip()
+                if not t:
+                    continue
+                parts.append(t)
+                xs = box.points[:, 0]
+                ys = box.points[:, 1]
+                blocks.append(
+                    TextBlock(
+                        text=t,
+                        bbox=[float(xs.min()), float(ys.min()), float(xs.max()), float(ys.max())],
+                        confidence=1.0,
+                        line_index=line_idx,
+                    )
+                )
+            joined = " ".join(parts)
             if joined:
-                out.append(joined)
-        return out
+                lines.append(joined)
+        return lines, blocks
 
 
 def get_engine() -> OCREngine:

@@ -1,0 +1,50 @@
+{
+  "name": "ACB Bank Transfer",
+  "description": "ACB chuyển tiền thành công - biên lai giao dịch",
+  "detect": {
+    "any_keyword": ["ACB", "Chuyển tiền thành công", "Chuyến tiền thành công"]
+  },
+  "fields": {
+    "amount": {
+      "regex": "([\\d.,]+)\\s*VND",
+      "transform": "vnd_to_number"
+    },
+    "amount_text": {
+      "anchor": "VND",
+      "direction": "below"
+    },
+    "sender": {
+      "anchor": "Từ",
+      "direction": "below"
+    },
+    "sender_account": {
+      "regex": "(\\d{4,}[%\\*\\d]+)",
+      "ignore_case": true
+    },
+    "receiver": {
+      "anchor": "Đến",
+      "direction": "below",
+      "stop_at": ["BIDV", "VCB", "TPBank", "MB", "Techcombank", "Vietcombank", "Agribank", "VietinBank", "ACB", "NH"]
+    },
+    "receiver_bank": {
+      "regex": "(BIDV|VCB|TPBank|MB Bank|Techcombank|Vietcombank|Agribank|VietinBank|ACB|NH TMCP[^\\n]+)",
+      "ignore_case": true
+    },
+    "transaction_id": {
+      "regex": "Mã giao dịch\\s*(\\S+)"
+    },
+    "datetime": {
+      "regex": "(\\d{2}/\\d{2}/\\d{4}),?\\s*(\\d{2}:\\d{2}:\\d{2})",
+      "transform": "strip"
+    },
+    "fee": {
+      "regex": "Phí\\s*(Miễn phí|[\\d.,]+)",
+      "transform": "strip"
+    },
+    "description": {
+      "anchor": "Nội dung",
+      "direction": "below",
+      "stop_at": ["Đến", "Lợi suất", "Chứng chỉ", "Đóng"]
+    }
+  }
+}

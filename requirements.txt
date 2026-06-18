@@ -7,5 +7,7 @@ numpy==1.26.4
 paddleocr==2.8.1
 paddlepaddle==2.6.2
 vietocr==0.3.13
+pytest==8.3.4
+httpx==0.27.2
 # torch / torchvision CPU wheels are installed in the Dockerfile from the
 # official PyTorch CPU index so we avoid pulling CUDA libraries on Render.

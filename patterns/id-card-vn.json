@@ -1,0 +1,42 @@
+{
+  "name": "Vietnamese ID Card (CCCD)",
+  "description": "Căn cước công dân Việt Nam - mặt trước",
+  "detect": {
+    "any_keyword": ["CĂN CƯỚC CÔNG DÂN", "CONG HOA XA HOI", "SOCIALIST REPUBLIC"]
+  },
+  "fields": {
+    "id_number": {
+      "regex": "(\\d{12})",
+      "transform": "strip"
+    },
+    "full_name": {
+      "anchor": "Họ và tên",
+      "direction": "right"
+    },
+    "date_of_birth": {
+      "anchor": "Ngày sinh",
+      "direction": "right"
+    },
+    "gender": {
+      "anchor": "Giới tính",
+      "direction": "right"
+    },
+    "nationality": {
+      "anchor": "Quốc tịch",
+      "direction": "right",
+      "default": "Việt Nam"
+    },
+    "place_of_origin": {
+      "anchor": "Quê quán",
+      "direction": "right"
+    },
+    "place_of_residence": {
+      "anchor": "Nơi thường trú",
+      "direction": "right"
+    },
+    "expiry_date": {
+      "anchor": "Có giá trị đến",
+      "direction": "right"
+    }
+  }
+}

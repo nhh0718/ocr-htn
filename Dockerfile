@@ -36,6 +36,7 @@ RUN pip install --upgrade pip \
 # Copy source and ensure all paths are owned by the non-root user.
 COPY --chown=${USERNAME}:${USERNAME} app ./app
 COPY --chown=${USERNAME}:${USERNAME} scripts ./scripts
+COPY --chown=${USERNAME}:${USERNAME} patterns ./patterns
 RUN mkdir -p /app/models /home/${USERNAME}/.cache /home/${USERNAME}/.paddleocr \
  && chown -R ${USERNAME}:${USERNAME} /app /home/${USERNAME}
 

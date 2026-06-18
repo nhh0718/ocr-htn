@@ -1,0 +1,38 @@
+{
+  "name": "Vietcombank Transfer",
+  "description": "Vietcombank chuyển tiền - biên lai giao dịch",
+  "detect": {
+    "any_keyword": ["Vietcombank", "VCB", "NH TMCP Ngoại thương"]
+  },
+  "fields": {
+    "amount": {
+      "regex": "([\\d.,]+)\\s*VND",
+      "transform": "vnd_to_number"
+    },
+    "sender": {
+      "anchor": "Từ",
+      "direction": "below"
+    },
+    "receiver": {
+      "anchor": "Đến",
+      "direction": "below",
+      "stop_at": ["BIDV", "TPBank", "MB", "ACB", "Agribank", "VietinBank"]
+    },
+    "transaction_id": {
+      "regex": "Mã giao dịch\\s*(\\S+)"
+    },
+    "datetime": {
+      "regex": "(\\d{2}/\\d{2}/\\d{4}),?\\s*(\\d{2}:\\d{2}:\\d{2})",
+      "transform": "strip"
+    },
+    "fee": {
+      "regex": "Phí\\s*(Miễn phí|[\\d.,]+)",
+      "transform": "strip"
+    },
+    "description": {
+      "anchor": "Nội dung",
+      "direction": "below",
+      "stop_at": ["Đến", "Lợi suất", "Chứng chỉ", "Đóng"]
+    }
+  }
+}
